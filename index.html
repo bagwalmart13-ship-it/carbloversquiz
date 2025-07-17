@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Keto Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    .quiz-wrapper {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .progress-bar-container {
+      position: relative;
+      width: 90%;
+      margin: 0 auto 30px auto;
+    }
+
+    .progress-text {
+      position: absolute;
+      left: 0;
+      top: -25px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .progress {
+      background-color: #e0e0e0;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #8dc63f, #4caf50);
+      transition: width 0.4s ease-in-out;
+      border-radius: 10px;
+    }
+
+    .question-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .question-subtitle {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .option {
+      background-color: #f0f0f0;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: bold;
+      user-select: none;
+      border: 2px solid transparent;
+    }
+
+    .option:hover {
+      border-color: #a8e063;
+      background-color: #eaffea;
+    }
+
+    .option.selected {
+      background-color: #34a853;
+      color: white;
+      border-color: #34a853;
+    }
+
+    .next-button {
+      background: linear-gradient(to right, #56ab2f, #a8e063);
+      color: white;
+      border: none;
+      font-size: 1.2rem;
+      padding: 15px 40px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .next-button:hover {
+      background: linear-gradient(to right, #4CAF50, #8BC34A);
+    }
+
+    .input-group {
+      margin: 15px 0;
+      text-align: left;
+    }
+
+    .input-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    .loading-screen {
+      display: none;
+      font-size: 1.4rem;
+      padding: 2rem;
+    }
+
+    .spinner {
+      margin: 20px auto;
+      border: 6px solid #eee;
+      border-top: 6px solid #4caf50;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="quiz-wrapper" id="quiz-container">
+    <div class="progress-bar-container">
+      <span class="progress-text" id="progress-text">0%</span>
+      <div class="progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div id="quiz-content">
+      <div class="question-title" id="question-title"></div>
+      <div class="question-subtitle" id="question-subtitle"></div>
+      <div class="options" id="options"></div>
+      <button class="next-button" onclick="nextQuestion()">NEXT →</button>
+    </div>
+
+    <div class="loading-screen" id="loading-screen">
+      <div class="spinner"></div>
+      <p>Analyzing your quiz answers...</p>
+    </div>
+  </div>
+
+  <script>
+    const quiz = [
+      {
+        question: "1. What's your gender?",
+        subtitle: "(Single choice)",
+        options: ["Male", "Female", "Prefer not to answer"],
+        type: "single"
+      },
+      {
+        question: "2. What’s your main keto goal?",
+        subtitle: "(Single choice)",
+        options: ["Lose weight", "Increase energy", "Improve focus", "Manage blood sugar", "Maintain a healthy lifestyle"],
+        type: "single"
+      },
+      {
+        question: "3. How experienced are you with the keto diet?",
+        subtitle: "(Single choice)",
+        options: ["I'm brand new", "I’ve tried keto before", "I’m experienced", "I’m just curious for now"],
+        type: "single"
+      },
+      {
+        question: "4. What kind of meals do you enjoy most?",
+        subtitle: "(Multiple choice allowed)",
+        options: ["Quick breakfasts", "Hearty dinners", "Easy lunches", "Sweet snacks & desserts", "High-protein meals", "Vegetarian options"],
+        type: "multiple"
+      },
+      {
+        question: "5. How much time do you usually have to cook?",
+        subtitle: "(Single choice)",
+        options: ["Under 15 minutes", "15–30 minutes", "30–60 minutes", "I love cooking and don’t mind the time"],
+        type: "single"
+      },
+      {
+        question: "6. Would you like instant access to 500+ keto recipes + 50 free fat-burning snack ideas?",
+        subtitle: "(Single choice)",
+        options: ["Yes, send it to me!", "No, maybe later"],
+        type: "single"
+      },
+      {
+        question: "Final Step: Let's personalize your plan",
+        subtitle: "(Please fill all fields)",
+        type: "input",
+        fields: [
+          { label: "Your Age", name: "age", type: "number" },
+          { label: "Your Height (cm or ft/in)", name: "height", type: "text" },
+          { label: "Your Current Weight (kg or lbs)", name: "weight", type: "text" },
+          { label: "Your Goal Weight (kg or lbs)", name: "goal", type: "text" }
+        ]
+      }
+    ];
+
+    let currentStep = 0;
+    const totalSteps = quiz.length;
+    const progressText = document.getElementById('progress-text');
+    const progressFill = document.getElementById('progress-fill');
+    const titleEl = document.getElementById('question-title');
+    const subtitleEl = document.getElementById('question-subtitle');
+    const optionsEl = document.getElementById('options');
+    const loadingScreen = document.getElementById('loading-screen');
+    const quizContent = document.getElementById('quiz-content');
+
+    function updateProgress() {
+      let percent = Math.round((currentStep / totalSteps) * 100);
+      progressFill.style.width = percent + "%";
+      progressText.textContent = percent + "%";
+    }
+
+    function renderQuestion() {
+      const q = quiz[currentStep];
+      titleEl.textContent = q.question;
+      subtitleEl.textContent = q.subtitle;
+      optionsEl.innerHTML = "";
+
+      if (q.type === "input") {
+        q.fields.forEach(field => {
+          const group = document.createElement("div");
+          group.classList.add("input-group");
+          group.innerHTML = `<label>${field.label}</label><input type="${field.type}" name="${field.name}" />`;
+          optionsEl.appendChild(group);
+        });
+      } else {
+        q.options.forEach(option => {
+          const div = document.createElement('div');
+          div.classList.add('option');
+          div.textContent = option;
+          div.addEventListener('click', () => {
+            if (q.type === 'single') {
+              optionsEl.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+              div.classList.add('selected');
+            } else {
+              div.classList.toggle('selected');
+            }
+          });
+          optionsEl.appendChild(div);
+        });
+      }
+
+      updateProgress();
+    }
+
+    function nextQuestion() {
+      if (currentStep < totalSteps - 1) {
+        currentStep++;
+        renderQuestion();
+      } else {
+        quizContent.style.display = "none";
+        loadingScreen.style.display = "block";
+        setTimeout(() => {
+          window.location.href = "https://your-getresponse-url.com"; // 🔗 Update to your destination
+        }, 4000); // ⏳ Simulate loading for 4 seconds
+      }
+    }
+
+    renderQuestion();
+  </script>
+
+</body>
+</html>
